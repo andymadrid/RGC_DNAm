@@ -1,0 +1,1 @@
+/path/to/trim_galore --path_to_cutadapt ~/.local/bin/cutadapt -q 30 --length 30 --paired /path/to/R1 /path/to/R2

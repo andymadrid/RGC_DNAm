@@ -1,0 +1,22 @@
+#########################################################
+########## Madrid & Rizk Retinal Cells WGBS #############
+#########################################################
+
+# 1 = DDI IR
+# 2 = DDI IR
+# 3 = DDI IR
+# 4 = DDI INR
+# 5 = DDI INR
+# 6 = NOFA NOINJURY (UA)
+# 7 = NOFA NOINJURY (UA)
+# 8 = NOFA NOINJURY (UA)
+# 9 = EMBRYO (UE)
+# 10 = EMBRYO (UE)
+# 11 = EMBRYO (UE)
+#12 = DDI INR
+
+# Cell counts for IR, INR, UA, UE
+# INR: 235,134.3 ± 41,048.34 (mean +/- SEM)
+# IR: 777.1667 +/- 317.277
+# UA: 333333.3 +/- 192450.1
+# UE: 300000 +/- 173205.1

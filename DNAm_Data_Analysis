@@ -1,0 +1,391 @@
+#########################################
+#########################################
+######## Analyze WGBS Data of Rat RGCs ##
+#########################################
+#########################################
+
+# laod pacakges
+library(DSS)
+library(TxDb.Rnorvegicus.UCSC.rn6.refGene)
+library(ChIPseeker)
+library(GenomicRanges)
+set.seed(1234)
+
+### read in data
+ddi.ir.1 <- read.table("1.cov.forDSS.txt",header=T)
+ddi.ir.2 <- read.table("2.cov.forDSS.txt",header=T)
+ddi.ir.3 <- read.table("3.cov.forDSS.txt",header=T)
+ddi.inr.1 <- read.table("4.cov.forDSS.txt",header=T)
+ddi.inr.2 <- read.table("5.cov.forDSS.txt",header=T)
+ddi.inr.3 <- read.table("12.cov.forDSS.txt",header=T)
+nofa.noinjury.1 <- read.table("6.cov.forDSS.txt",header=T)
+nofa.noinjury.2 <- read.table("7.cov.forDSS.txt",header=T)
+nofa.noinjury.3 <- read.table("8.cov.forDSS.txt",header=T)
+embryo.1 <- read.table("9.cov.forDSS.txt",header=T)
+embryo.2 <- read.table("10.cov.forDSS.txt",header=T)
+embryo.3 <- read.table("11.cov.forDSS.txt",header=T)
+
+### filter CpGs for 10x coverage
+ddi.ir.1 <- ddi.ir.1[which(ddi.ir.1$N>=10),]
+ddi.ir.2 <- ddi.ir.2[which(ddi.ir.2$N>=10),]
+ddi.ir.3 <- ddi.ir.3[which(ddi.ir.3$N>=10),]
+ddi.inr.1 <- ddi.inr.1[which(ddi.inr.1$N>=10),]
+ddi.inr.2 <- ddi.inr.2[which(ddi.inr.2$N>=10),] 
+ddi.inr.3 <- ddi.inr.3[which(ddi.inr.3$N>=10),]
+nofa.noinjury.1 <- nofa.noinjury.1[which(nofa.noinjury.1$N>=10),]
+nofa.noinjury.2 <- nofa.noinjury.2[which(nofa.noinjury.2$N>=10),] 
+nofa.noinjury.3 <- nofa.noinjury.3[which(nofa.noinjury.3$N>=10),]
+embryo.1 <- embryo.1[which(embryo.1$N>=10),]
+embryo.2 <- embryo.2[which(embryo.2$N>=10),] 
+embryo.3 <- embryo.3[which(embryo.3$N>=10),]
+
+### generate objects for differential analysis
+BSobj.ir.inr <- makeBSseqData(list(ddi.ir.1,ddi.ir.2,ddi.ir.3,ddi.inr.1,ddi.inr.2,ddi.inr.3),c('IR1','IR2','IR3','INR1','INR2','INR3'))
+BSobj.ir.embryo <- makeBSseqData(list(ddi.ir.1,ddi.ir.2,ddi.ir.3,embryo.1,embryo.2,embryo.3),c('IR1','IR2','IR3','E1','E2','E3'))
+BSobj.ir.nofa <- makeBSseqData(list(ddi.ir.1,ddi.ir.2,ddi.ir.3,nofa.noinjury.1,nofa.noinjury.2,nofa.noinjury.3),c('IR1','IR2','IR3','NOFA1','NOFA2','NOFA3'))
+BSobj.inr.nofa <- makeBSseqData(list(ddi.inr.1,ddi.inr.2,ddi.inr.3,nofa.noinjury.1,nofa.noinjury.2,nofa.noinjury.3),c('INR1','INR2','INR3','NOFA1','NOFA2','NOFA3'))
+BSobj.inr.embryo <- makeBSseqData(list(ddi.inr.1,ddi.inr.2,ddi.inr.3,embryo.1,embryo.2,embryo.3),c('INR1','INR2','INR3','E1','E2','E3'))
+BSobj.nofa.embryo <- makeBSseqData(list(nofa.noinjury.1,nofa.noinjury.2,nofa.noinjury.3,embryo.1,embryo.2,embryo.3),c('NOFA1','NOFA2','NOFA3','E1','E2','E3'))
+
+### differential analysis
+dmlTest.ir.inr.sm <- DMLtest(BSobj.ir.inr,group1=c("IR1","IR2","IR3"),group2=c("INR1","INR2","INR3"),smoothing=TRUE,BPPARAM=bpparam())
+dmlTest.ir.nofa.sm <- DMLtest(BSobj.ir.nofa,group1=c("IR1","IR2","IR3"),group2=c("NOFA1","NOFA2","NOFA3"),smoothing=TRUE,BPPARAM=bpparam())
+dmlTest.ir.embryo.sm <- DMLtest(BSobj.ir.embryo,group1=c("IR1","IR2","IR3"),group2=c("E1","E2","E3"),smoothing=TRUE,BPPARAM=bpparam())
+dmlTest.inr.embryo.sm <- DMLtest(BSobj.inr.embryo,group1=c("INR1","INR2","INR3"),group2=c("E1","E2","E3"),smoothing=TRUE,BPPARAM=bpparam())
+dmlTest.inr.nofa.sm <- DMLtest(BSobj.inr.nofa,group1=c("INR1","INR2","INR3"),group2=c("NOFA1","NOFA2","NOFA3"),smoothing=TRUE,BPPARAM=bpparam())
+dmlTest.nofa.embryo.sm <- DMLtest(BSobj.nofa.embryo,group1=c("NOFA1","NOFA2","NOFA3"),group2=c("E1","E2","E3"),smoothing=TRUE,BPPARAM=bpparam())
+
+### save data
+save(BSobj.ir.inr,dmlTest.ir.inr.sm,file="dss.processed.ir.inr.rdata")
+save(BSobj.ir.embryo,dmlTest.ir.embryo.sm,file="dss.processed.ir.embryo.rdata")
+save(BSobj.ir.nofa,dmlTest.ir.nofa.sm,file="dss.processed.ir.nofa.rdata")
+save(BSobj.inr.nofa,dmlTest.inr.nofa.sm,file="dss.processed.inr.nofa.rdata")
+save(BSobj.inr.embryo,dmlTest.inr.embryo.sm,file="dss.processed.inr.embryo.rdata")
+save(BSobj.nofa.embryo,dmlTest.nofa.embryo.sm,file="dss.processed.nofa.embryo.rdata")
+
+### get DMLs with FDR <0.1
+fdr1.irinr <- dmlTest.ir.inr.sm[which(dmlTest.ir.inr.sm$fdr<0.1),]
+fdr1.irnofa <- dmlTest.ir.nofa.sm[which(dmlTest.ir.nofa.sm$fdr<0.1),]
+fdr1.irembryo <- dmlTest.ir.embryo.sm[which(dmlTest.ir.embryo.sm$fdr<0.1),]
+fdr1.inrnofa <- dmlTest.inr.nofa.sm[which(dmlTest.inr.nofa.sm$fdr<0.1),]
+fdr1.inrembryo <- dmlTest.inr.embryo.sm[which(dmlTest.inr.embryo.sm$fdr<0.1),]
+fdr1.nofaembryo <- dmlTest.nofa.embryo.sm[which(dmlTest.nofa.embryo.sm$fdr<0.1),]
+
+### filter only for those with delta >20%
+fdr1.irinr <- fdr1.irinr[which(abs(fdr1.irinr$diff)>0.2),]
+fdr1.irnofa <- fdr1.irnofa[which(abs(fdr1.irnofa$diff)>0.2),]
+fdr1.irembryo <- fdr1.irembryo[which(abs(fdr1.irembryo$diff)>0.5),]
+fdr1.inrnofa <- fdr1.inrnofa[which(abs(fdr1.inrnofa$diff)>0.2),]
+fdr1.inrembryo <- fdr1.inrembryo[which(abs(fdr1.inrembryo$diff)>0.5),] 
+fdr1.nofaembryo <- fdr1.nofaembryo[which(abs(fdr1.nofaembryo$diff)>0.5),]
+
+### filter only for those with FDR <0.01
+fdr1.irinr <- fdr1.irinr[which(abs(fdr1.irinr$fdr)<0.01),]
+fdr1.irnofa <- fdr1.irnofa[which(abs(fdr1.irnofa$fdr)<0.01),]
+fdr1.irembryo <- fdr1.irembryo[which(abs(fdr1.irembryo$fdr)<0.001),]
+fdr1.inrnofa <- fdr1.inrnofa[which(abs(fdr1.inrnofa$fdr)<0.01),]
+fdr1.inrembryo <- fdr1.inrembryo[which(abs(fdr1.inrembryo$fdr)<0.001),] 
+fdr1.nofaembryo <- fdr1.nofaembryo[which(abs(fdr1.nofaembryo$fdr)<0.001),]
+
+### annotated DMLs
+x <- with(fdr1.irinr,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.irinr <- cbind(fdr1.irinr,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(fdr1.irnofa,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.irnofa <- cbind(fdr1.irnofa,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(fdr1.irembryo,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.irembryo <- cbind(fdr1.irembryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(fdr1.inrnofa,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.inrnofa <- cbind(fdr1.inrnofa,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(fdr1.inrembryo,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.inrembryo <- cbind(fdr1.inrembryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(fdr1.nofaembryo,GRanges(chr,IRanges(pos,pos+1)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+fdr1.nofaembryo <- cbind(fdr1.nofaembryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+save(fdr1.irinr,fdr1.irnofa,fdr1.irembryo,fdr1.inrnofa,fdr1.inrembryo,fdr1.nofaembryo,file="DMLs.allComparisons.rdata")
+write.table(fdr1.irinr,file="DMLs/dmls.ir.inr.txt",quote=F,row.names=F,sep='\t')
+write.table(fdr1.irnofa,file="DMLs/dmls.ir.nofa.txt",quote=F,row.names=F,sep='\t')
+write.table(fdr1.irembryo,file="DMLs/dmls.ir.embryo.txt",quote=F,row.names=F,sep='\t')
+write.table(fdr1.inrnofa,file="DMLs/dmls.inr.nofa.txt",quote=F,row.names=F,sep='\t')
+write.table(fdr1.inrembryo,file="DMLs/dmls.inr.embryo.txt",quote=F,row.names=F,sep='\t')
+write.table(fdr1.nofaembryo,file="DMLs/dmls.nofa.embryo.txt",quote=F,row.names=F,sep='\t')
+### perl script to separate intragenic genes based on hyper/hypo
+
+## GO analysis of DML-associated genes
+f <- read.table("dmls.ir.inr.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.ir.inr.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.ir.inr.rdata")
+
+f <- read.table("dmls.ir.nofa.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.ir.nofa.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.ir.nofa.rdata")
+
+f <- read.table("dmls.ir.embryo.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.ir.embryo.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.ir.embryo.rdata")
+
+f <- read.table("dmls.inr.nofa.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.inr.nofa.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.inr.nofa.rdata")
+
+f <- read.table("dmls.ir.embryo.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.ir.embryo.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.inr.embryo.rdata")
+
+f <- read.table("dmls.nofa.embryo.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+f <- read.table("dmls.nofa.embryo.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes <- as.character(e[,2])
+egoHypo <- enrichGO(gene=genes,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+save(egoHyper,egoHypo,file="go.nofa.embryo.rdata")
+
+### stricter call DMRs
+dmrs.ir.inr <- callDMR(dmlTest.ir.inr.sm,delta=0.1,minCG=3,p.threshold=1e-4,pct.sig=0.5)
+dmrs.ir.embryo <- callDMR(dmlTest.ir.embryo.sm,delta=0.2,minCG=5,p.threshold=1e-4,pct.sig=0.99)
+dmrs.ir.nofa <- callDMR(dmlTest.ir.nofa.sm,delta=0.1,minCG=3,p.threshold=1e-4,pct.sig=0.5)
+dmrs.inr.embryo <- callDMR(dmlTest.inr.embryo.sm,delta=0.2,minCG=5,p.threshold=1e-4,pct.sig=0.99)
+dmrs.inr.nofa <- callDMR(dmlTest.inr.nofa.sm,delta=0.1,minCG=3,p.threshold=1e-4,pct.sig=0.5)
+dmrs.nofa.embryo <- callDMR(dmlTest.nofa.embryo.sm,delta=0.2,minCG=5,p.threshold=1e-4,pct.sig=0.99)
+
+### annotate DMRs to rat genes/features
+x <- with(dmrs.ir.inr,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.ir.inr <- cbind(dmrs.ir.inr,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(dmrs.ir.nofa,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.ir.nofa <- cbind(dmrs.ir.nofa,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(dmrs.ir.embryo,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.ir.embryo <- cbind(dmrs.ir.embryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(dmrs.inr.nofa,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.inr.nofa <- cbind(dmrs.inr.nofa,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(dmrs.inr.embryo,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.inr.embryo <- cbind(dmrs.inr.embryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+x <- with(dmrs.nofa.embryo,GRanges(chr,IRanges(start, end)))
+xx <- as.data.frame(annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db"))
+dmrs.nofa.embryo <- cbind(dmrs.nofa.embryo,xx$SYMBOL,xx$distanceToTSS,xx$annotation,xx$GENENAME)
+
+### GO for biological processes
+### used perl script to only get genes that were intragenic DMRs
+### code below was only for all DMR-assocaited genes, not split into hyper or hypo yet
+
+f <- read.table("DMRs.ir.inr.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.ir.inr <- as.character(e[,2])
+
+f <- read.table("DMRs.ir.nofa.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.ir.nofa <- as.character(e[,2])
+
+f <- read.table("DMRs.ir.embryo.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.ir.embryo <- as.character(e[,2])
+
+f <- read.table("DMRs.inr.nofa.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.inr.nofa <- as.character(e[,2])
+
+f <- read.table("DMRs.inr.embryo.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.inr.embryo <- as.character(e[,2])
+
+f <- read.talbe("DMRs.nofa.embryo.txt.genes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genes.nofa.embryo <- as.character(e[,2])
+
+ego.ir.inr <- enrichGO(gene=genes.ir.inr,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+ego.ir.nofa <- enrichGO(gene=genes.ir.nofa,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+ego.ir.embryo <- enrichGO(gene=genes.ir.embryo,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+ego.inr.nofa <- enrichGO(gene=genes.inr.nofa,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+ego.inr.embryo <- enrichGO(gene=genes.inr.embryo,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+ego.nofa.embryo <- enrichGO(gene=genes.nofa.embryo,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+
+### make bar plots
+pdf("GO.ir.inr.allGenes.pdf")
+barplot(ego.ir.inr,showCategory=15,col="pvalue")
+dev.off()
+
+pdf("GO.ir.embryo.allGenes.pdf")
+barplot(ego.ir.embryo,showCategory=15,col="pvalue")
+dev.off()
+
+pdf("GO.ir.nofa.allGenes.pdf")
+barplot(ego.ir.nofa,showCategory=15,col="pvalue")
+dev.off()
+
+pdf("GO.inr.embryo.allGenes.pdf")
+barplot(ego.inr.embryo,showCategory=15,col="pvalue")
+dev.off()
+
+pdf("GO.inr.nofa.allGenes.pdf")
+barplot(ego.inr.nofa,showCategory=15,col="pvalue")
+dev.off()
+
+pdf("GO.nofa.embryo.allGenes.pdf")
+barplot(ego.nofa.embryo,showCategory=15,col="pvalue")
+dev.off()
+
+
+### Make pie charts
+x <- with(dmrs.ir.inr,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.ir.inr.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+x <- with(dmrs.ir.nofa,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.ir.nofa.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+x <- with(dmrs.ir.embryo,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.ir.embryo.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+x <- with(dmrs.inr.nofa,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.inr.nofa.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+x <- with(dmrs.inr.embryo,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.inr.embryo.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+x <- with(dmrs.nofa.embryo,GRanges(chr,IRanges(start, end)))
+xx <- annotatePeak(x,tssRegion=c(-10000,3000),TxDb=txdb,annoDb="org.Rn.eg.db")
+pdf("Pie.nofa.embryo.pdf")
+plotAnnoPie(xx)
+dev.off()
+
+### Make hierarchical cluster plot
+BSobj.all <- makeBSseqData(list(ddi.ir.1,ddi.ir.2,ddi.ir.3,ddi.inr.1,ddi.inr.2,ddi.inr.3,nofa.noinjury.1,nofa.noinjury.2,nofa.noinjury.3,embryo.1,embryo.2,embryo.3),c('IR1','IR2','IR3','INR1','INR2','INR3','UI1','UI2','UI3','E1','E2','E3'))
+meth <- getMeth(BSobj.all,type="raw")
+library(dendextend)
+dend <- as.dendrogram(hclust(dist(t(meth))))
+labels_colors(dend) <- c("black","green","green","green","black","black","darkgoldenrod1","darkgoldenrod1","darkgoldenrod1","red","red","red")
+pdf("hclust.rawMeth.cov10.allSamples.pdf")
+plot(dend)
+dev.off()
+
+### Make PCA plot
+library(limma)
+col <- c("black","black","black","darkgoldenrod1","darkgoldenrod1","darkgoldenrod1","red","red","red","green","green","green")
+pdf("pca.rawMeth.allSamples.cov10.pdf")
+plotMDS(meth,top=1000,gene.selection="common",col=col)
+dev.off()
+
+### Make circos plot
+library(BioCircos)
+library(RColorBrewer)
+pal <- brewer.pal(11,"Spectral")
+x <- list("1"=282763074,"2"=266435125,"3"=177699992,"4"=184226339,"5"=173707219,"6"=147991367,"7"=145729302,"8"=133307652,"9"=122095297,"10"=112626471,"11"=90463843,"12"=52716770,"13"=114033958,"14"=115493446,"15"=111246239,"16"=90668790,"17"=90843779,"18"=88201929,"19"=62275575,"20"=56205956,"X"=159970021)
+pos <- read.table("forCircos.txt",header=F)
+hyper <- pos[1:151,]
+hypo <- pos[152:nrow(pos),]
+hyper_chr <- as.character(hyper[,1])
+hyper_start <- hyper[,2]
+hyper_end <- hyper[,3]+3000000
+hypo_chr <- as.character(hypo[,1])
+hypo_start <- hypo[,2]
+hypo_end <- hypo[,3]+3000000
+tracklist <- BioCircosArcTrack('myArcTracks',hypo_chr,hypo_start,hypo_end,opacities=1,colors='blue',minRadius=0.55,maxRadius=0.7)
+tracklist <- tracklist + BioCircosArcTrack('myArcTracks',hyper_chr,hyper_start,hyper_end,opacities=1,colors='red',minRadius=0.75,maxRadius=0.9)
+BioCircos(genome=x,tracklist,genomeFillColor=pal,  genomeTicksLen = 2, genomeTicksTextSize = 0, genomeTicksScale = 1e+8)
+
+### Make heatmap for IR v INR DMRs
+BSobj.ir.inr.smoothed <- BSmooth(BSobj.ir.inr)
+methSmoothed.ir.inr <- getMeth(BSobj.ir.inr.smoothed,type="smooth")
+chrs <- as.data.frame(seqnames(BSobj.ir.inr))
+pos <- as.data.frame(start(BSobj.ir.inr))
+methWork <- cbind(chrs,pos,as.data.frame(methSmoothed.ir.inr))
+colnames(methWork) <- c("chr","pos","IR1","IR2","IR3","INR1","INR2","INR3")
+dmrs <- read.table("forDSS.txt",header=T)
+dmrs.gr <- with(dmrs,GRanges(chr,IRanges(start,end)))
+meth.gr <- with(methWork,GRanges(chr,IRanges(pos,pos+1)))
+x <- as.data.frame(findOverlaps(meth.gr,dmrs.gr))
+methWork.subset <- methWork[as.numeric(x$queryHits),3:8]
+library(gplots)
+library(RColorBrewer)
+pal <- brewer.pal(10,"Spectral")
+pdf("heatmap.ir.inr.bseqSmoothed.dmrs.pdf")
+heatmap.2(as.matrix(methWork.subset),col=pal,trace="none",dendrogram="column",labRow=F,key.title=NULL,key.xlab="Methylation Level",density.info="none")
+dev.off()
+
+### GO for biological processes of hyper/hypo DMR-genes from IR/INR comparison
+### used perl script to only get genes that were intragenic DMRs
+f <- read.table("DMRs.ir.inr.loosened.txt.hyperGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genesHyper <- as.character(e[,2])
+f <- read.table("DMRs.ir.inr.loosened.txt.hypoGenes",header=F)
+e <- bitr(f[,1],fromType="SYMBOL",toType="ENTREZID",OrgDb="org.Rn.eg.db")
+genesHypo <- as.character(e[,2])
+egoHyper <- enrichGO(gene=genesHyper,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+egoHypo <- enrichGO(gene=genesHypo,ont="BP",OrgDb="org.Rn.eg.db",pvalueCutoff=1,qvalueCutoff=1,readable=T)
+keggHyper <- enrichKEGG(gene=genesHyper,organism="rat",pvalueCutoff=1,qvalueCutoff=1)
+keggHypo <- enrichKEGG(gene=genesHypo,organism="rat",pvalueCutoff=1,qvalueCutoff=1)
+pdf("GO.ir.inr.hyperGenes.pdf")
+barplot(egoHyper,showCategory=10)
+dev.off()
+pdf("GO.ir.inr.hypoGenes.pdf")
+barplot(egoHypo,showCategory=10)
+dev.off()
+egoHyper <- as.data.frame(egoHyper)
+egoHypo <- as.data.frame(egoHypo)
+write.table(egoHyper,file="GO.ir.inr.hyperGenes.csv",quote=F,row.names=F,sep=',')
+write.table(egoHypo,file="GO.ir.inr.hypoGenes.csv",quote=F,row.names=F,sep=',')

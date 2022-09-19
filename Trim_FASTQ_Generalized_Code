@@ -1,1 +1,5 @@
+# trim raw FASTQ files
 /path/to/trim_galore --path_to_cutadapt ~/.local/bin/cutadapt -q 30 --length 50 --clip_R1 4 /path/to/concatenated/R1/R2/file
+
+# trim unmapped reads from first pass of Bismark alignment
+/path/to/trim_galore --path_to_cutadapt ~/.local/bin/cutadapt

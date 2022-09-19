@@ -1,0 +1,8 @@
+# Generalized code for deduplication of aligned reads
+/path/to/bismark/deduplicate_bismark -s --bam /path/to/aligned.bam
+
+# Generalized code for methylation extraction
+/path/to/bismark/bismark_methylation_extractor --no_overlap --multicore 80 -s --bedGraph /path/to/deduplicated.bam
+
+# Generalized code for converting coverage to cytosine
+/path/to/bismark/coverage2cytosine --merge_CpG --genome_folder /path/to/rn6/genome sampleID_mergedCpG /path/to/deduplicated.bismark.cov.gz

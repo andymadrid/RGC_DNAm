@@ -1,1 +1,2 @@
-/path/to/bismark 
+# Bismark code to align both first-pass trimmed FASTQ files, and also to align second-pass re-trimmed FASTQ files from unmapped reads
+/path/to/bismark --parallel 6 -p 4 --bowtie2 --path_to_bowtie /path/to/bowtie2 --non_directional --score_min L,0,0.4 -un /path/to/rn6/genome /path/to/trimmed/read/file
